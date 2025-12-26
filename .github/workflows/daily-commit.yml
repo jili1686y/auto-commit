@@ -1,0 +1,30 @@
+name: Daily Auto Commit
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  auto-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure Git and Commit
+        run: |
+          USER_NAME=$(grep 'user_name:' config.yml | sed 's/.*: *"\(.*\)"/\1/')
+          USER_EMAIL=$(grep 'user_email:' config.yml | sed 's/.*: *"\(.*\)"/\1/')
+          git config user.name "$USER_NAME"
+          git config user.email "$USER_EMAIL"
+          TIMESTAMP=$(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M:%S')
+          echo "## $TIMESTAMP" >> logs/daily-log.md
+          echo "" >> logs/daily-log.md
+          echo "- Auto commit success" >> logs/daily-log.md
+          echo "---" >> logs/daily-log.md
+          echo "" >> logs/daily-log.md
+          echo "$TIMESTAMP" > logs/last-commit.txt
+          git add -A
+          git diff --staged --quiet || (git commit -m "Daily auto commit - $TIMESTAMP" && git push)
